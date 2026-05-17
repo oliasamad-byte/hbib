@@ -18,30 +18,36 @@ from s888 import breakout_levels, indicators, tech_score_daily, tech_score_weekl
 
 DATA_ROOT = Path("/tmp/eod")
 
-# From the screenshot
-GAINERS = [
-    ("SATLW",  3.43,   30.92),
-    ("HYLN",   4.62,   24.86),
-    ("GETY",   0.8699, 21.16),
-    ("JLHL",   23.26,  17.59),
-    ("SG",     8.05,   16.84),
-    ("NL",     7.50,   11.61),
-    ("GENVR",  0.7105, 10.93),
-    ("STRZ",   24.30,  10.81),
-    ("CD",     8.30,   9.64),
-    ("SPIR",   19.85,  8.83),
-    ("SIDU",   3.96,   8.20),
-    ("AEBI",   11.99,  7.53),
-    ("FBIOP",  15.01,  7.06),
-    ("WTI",    4.73,   6.29),
-    ("OIO",    1.89,   6.18),
-    ("GEMI",   5.58,   6.08),
-    ("PNRG",   268.16, 5.84),
-    ("ESOA",   18.43,  5.80),
-    ("EGHT",   2.36,   5.36),
-    ("XRX",    2.56,   5.35),
-    ("DCBO",   17.23,  5.32),
-]
+# Multiple batches; pass --batch NAME at CLI (default: latest)
+BATCHES = {
+    "batch1_extended": [
+        ("SATLW",  3.43,   30.92), ("HYLN",   4.62,   24.86),
+        ("GETY",   0.8699, 21.16), ("JLHL",   23.26,  17.59),
+        ("SG",     8.05,   16.84), ("NL",     7.50,   11.61),
+        ("GENVR",  0.7105, 10.93), ("STRZ",   24.30,  10.81),
+        ("CD",     8.30,   9.64),  ("SPIR",   19.85,  8.83),
+        ("SIDU",   3.96,   8.20),  ("AEBI",   11.99,  7.53),
+        ("FBIOP",  15.01,  7.06),  ("WTI",    4.73,   6.29),
+        ("OIO",    1.89,   6.18),  ("GEMI",   5.58,   6.08),
+        ("PNRG",   268.16, 5.84),  ("ESOA",   18.43,  5.80),
+        ("EGHT",   2.36,   5.36),  ("XRX",    2.56,   5.35),
+        ("DCBO",   17.23,  5.32),
+    ],
+    "batch2_smallcap_300m_1b": [
+        ("HRTG",   23.54,  4.53), ("SABR",   1.65,   4.43),
+        ("FWRG",   11.23,  4.37), ("FENC",   9.64,   4.33),
+        ("RPD",    6.50,   4.33), ("IVVD",   1.21,   4.31),
+        ("MITK",   14.15,  4.27), ("OPENW",  0.541,  4.18),
+        ("GDYN",   6.73,   4.02), ("FTW",    11.70,  4.00),
+        ("REPL",   5.12,   3.85), ("DSP",    10.82,  3.64),
+        ("BLND",   1.44,   3.60), ("GRNT",   5.51,   3.55),
+        ("PCTTW",  3.50,   3.55), ("BH",     267.95, 3.53),
+        ("MAKO",   8.21,   3.53), ("BOW",    28.25,  3.48),
+        ("GCO",    33.05,  3.41), ("YDES",   5.17,   3.40),
+        ("RDVT",   46.93,  3.39),
+    ],
+}
+GAINERS = BATCHES["batch2_smallcap_300m_1b"]   # default = latest
 
 # S888 hard pre-screens (from spec §3.4 + recommended loser-pattern filters)
 MIN_PRICE = 2.00
@@ -111,8 +117,15 @@ def filter_status(price: float, gap: float) -> tuple[str, str]:
 
 
 def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--batch", default="batch2_smallcap_300m_1b",
+                    choices=list(BATCHES.keys()))
+    args = ap.parse_args()
+    global GAINERS
+    GAINERS = BATCHES[args.batch]
     print(f"\n{'='*82}")
-    print("  S888 SCREEN: TODAY'S USER-SUPPLIED TOP GAINERS")
+    print(f"  S888 SCREEN: {args.batch}  ({len(GAINERS)} tickers)")
     print(f"{'='*82}\n")
 
     print(f"{'#':>3} {'TICKER':<7} {'PRICE':>8} {'GAP%':>7}  {'STATUS':<7} "
