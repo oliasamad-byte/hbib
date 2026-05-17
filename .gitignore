@@ -4,3 +4,5 @@ signals.csv
 signals_*.csv
 tickers.csv
 data/
+s888_trades.db
+trades.csv
