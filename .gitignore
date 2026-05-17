@@ -3,3 +3,4 @@ __pycache__/
 signals.csv
 summary.csv
 tickers.csv
+data/
