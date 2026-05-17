@@ -28,6 +28,46 @@ from .utils.telegram_client import send_message
 log = logging.getLogger(__name__)
 
 
+# ---------- trade-logger bridge ----------
+
+def _log_picks_to_trade_logger(scan_ts: str, picks: list) -> None:
+    """Log every ranked pick to ../trade_logger.py's SQLite DB.
+
+    Best-effort: silently skips if trade_logger isn't reachable. The
+    user can drop the trade_logger.py at repo root or any sys.path
+    location to enable this.
+    """
+    try:
+        import sys
+        from pathlib import Path
+        repo_root = Path(__file__).resolve().parents[2]
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+        import trade_logger as tl
+    except Exception as e:
+        log.debug("trade_logger not loaded: %s", e)
+        return
+    date_str = scan_ts[:10]
+    scan_hm = scan_ts[11:16]
+    for i, t in enumerate(picks, 1):
+        try:
+            tl.log_pick(
+                date=date_str,
+                scan_time=scan_hm,
+                rank=i,
+                ticker=t.ticker,
+                dts=float(t.dts_total),
+                catalyst=float(t.catalyst_score),
+                aas=float(t.dts_analyst),
+                cap=t.cap,
+                entry_price=float(t.price),
+                gain_at_appear=float(t.change_pct or 0.0),
+            )
+        except Exception as e:
+            log.warning("trade_logger.log_pick failed for %s: %s", t.ticker, e)
+    log.info("trade_logger: logged %d picks for %s", len(picks), date_str)
+
+
 # ---------- pipeline ----------
 
 async def run_once(scan_idx: int | None = None,
@@ -156,6 +196,11 @@ async def run_once(scan_idx: int | None = None,
                         [(i+1, t.ticker, t.wts_total,
                           {"stage": stages.get(t.ticker, 0)})
                          for i, t in enumerate(weekly)])
+
+    # Trade-logger hook: log every surfaced ticker so the loser-pattern
+    # analyzer has data to work with. Safe to call — trade_logger lives
+    # at repo root, only logs if importable.
+    _log_picks_to_trade_logger(scan_ts, small + mlm)
 
     # Format + send
     if small or CFG.daily_small_send_if_empty:
