@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+signals.csv
+summary.csv
+tickers.csv
