@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
 signals.csv
-summary.csv
+signals_*.csv
 tickers.csv
 data/
